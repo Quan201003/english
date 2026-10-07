@@ -311,6 +311,11 @@ select:focus-visible,
   cursor: pointer;
 }
 
+.account { display: flex; align-items: center; gap: 10px; position: absolute; top: 20px; right: 24px; }
+.account-name { color: #697386; font-size: 13px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.google-button, .sign-out { border: 1px solid #d9dee8; border-radius: 10px; background: #fff; color: #263248; cursor: pointer; padding: 9px 12px; font: inherit; font-size: 13px; }
+.google-button:hover, .sign-out:hover { border-color: #8d98aa; }
+
 .hidden {
   display: none !important;
 }

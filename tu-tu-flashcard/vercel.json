@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/anki-static/index.html" },
+    { "source": "/(.*)", "destination": "/anki-static/$1" }
+  ]
+}
