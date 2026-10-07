@@ -143,7 +143,12 @@ document.addEventListener('click', (event) => {
   target = event.target.closest('[data-book]'); if (target) { state.book = target.dataset.book; renderFilters(); renderHome(); return; }
   target = event.target.closest('[data-unit]'); if (target) { openUnit(target.dataset.unit); return; }
   if (event.target.closest('#back')) { $('#studyView').classList.add('hidden'); $('#homeView').classList.remove('hidden'); return; }
-  if (event.target.closest('#card') && !event.target.closest('[data-star],[data-audio]')) { state.flipped = !state.flipped; $('#card').classList.toggle('flipped', state.flipped); return; }
+  if (event.target.closest('#card') && !event.target.closest('[data-star],[data-audio]')) {
+    state.flipped = !state.flipped;
+    $('#card').classList.toggle('flipped', state.flipped);
+    playAudio(currentWord());
+    return;
+  }
   target = event.target.closest('[data-star]'); if (target) { toggleStar(target.dataset.star); return; }
   target = event.target.closest('[data-audio]'); if (target) { playAudio(state.words.find((word) => word.id === target.dataset.audio)); return; }
   if (event.target.closest('#prev')) move(-1); if (event.target.closest('#next')) move(1);
