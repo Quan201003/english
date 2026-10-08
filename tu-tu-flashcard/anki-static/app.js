@@ -60,7 +60,6 @@ const sourceId = (word) => word.lessonId || state.unit?.id || '';
 
 function loadBrowserProgress() {
   loadLocalProgress();
-  $('#accountName').textContent = 'Tiến độ được lưu trên trình duyệt này';
   renderHome();
 }
 

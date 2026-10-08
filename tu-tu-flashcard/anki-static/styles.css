@@ -121,10 +121,6 @@ select:focus-visible,
   font-size: 12px;
 }
 
-.topbar small {
-  color: var(--muted);
-}
-
 .intro {
   padding: 44px 0 28px;
   max-width: 760px;
@@ -311,9 +307,6 @@ select:focus-visible,
   cursor: pointer;
 }
 
-.account { display: flex; align-items: center; gap: 10px; position: absolute; top: 20px; right: 24px; }
-.account-name { color: #697386; font-size: 13px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
 .hidden {
   display: none !important;
 }
@@ -328,7 +321,7 @@ select:focus-visible,
 
 .lesson-nav {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 12px;
   margin: -8px 0 28px;
@@ -630,10 +623,6 @@ select:focus-visible,
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .topbar small {
-    display: none;
-  }
-
   .study-heading,
   .study-tools {
     align-items: stretch;
@@ -657,18 +646,6 @@ select:focus-visible,
 @media (max-width: 560px) {
   .shell {
     width: calc(100% - 22px);
-  }
-
-  .account {
-    position: static;
-    justify-content: flex-end;
-    min-height: 30px;
-    padding-top: 8px;
-  }
-
-  .account-name {
-    max-width: 100%;
-    font-size: 11px;
   }
 
   .topbar {
