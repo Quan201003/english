@@ -313,8 +313,6 @@ select:focus-visible,
 
 .account { display: flex; align-items: center; gap: 10px; position: absolute; top: 20px; right: 24px; }
 .account-name { color: #697386; font-size: 13px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.google-button, .sign-out { border: 1px solid #d9dee8; border-radius: 10px; background: #fff; color: #263248; cursor: pointer; padding: 9px 12px; font: inherit; font-size: 13px; }
-.google-button:hover, .sign-out:hover { border-color: #8d98aa; }
 
 .hidden {
   display: none !important;
@@ -326,6 +324,48 @@ select:focus-visible,
 
 .back {
   margin-bottom: 26px;
+}
+
+.lesson-nav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin: -8px 0 28px;
+}
+
+.lesson-nav button {
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: #475467;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.lesson-nav button:last-child {
+  justify-self: end;
+}
+
+.lesson-nav button:hover:not(:disabled) {
+  border-color: #b8c7da;
+  box-shadow: 0 6px 16px rgba(31, 41, 55, .06);
+}
+
+.lesson-nav button:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+.lesson-nav span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .study-heading {
@@ -608,6 +648,10 @@ select:focus-visible,
   .study-actions select {
     flex: 1;
   }
+
+  .lesson-nav {
+    margin-bottom: 22px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -615,10 +659,26 @@ select:focus-visible,
     width: calc(100% - 22px);
   }
 
+  .account {
+    position: static;
+    justify-content: flex-end;
+    min-height: 30px;
+    padding-top: 8px;
+  }
+
+  .account-name {
+    max-width: 100%;
+    font-size: 11px;
+  }
+
   .topbar {
     min-height: 66px;
     flex-wrap: wrap;
     padding-top: 8px;
+  }
+
+  .brand {
+    font-size: 22px;
   }
 
   .tabs {
@@ -641,6 +701,37 @@ select:focus-visible,
     font-size: 34px;
   }
 
+  #studyView {
+    padding-top: 20px;
+  }
+
+  .back {
+    margin-bottom: 20px;
+  }
+
+  .lesson-nav {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: -2px 0 22px;
+  }
+
+  .lesson-nav span {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    font-size: 12px;
+  }
+
+  .lesson-nav button {
+    grid-row: 2;
+    min-width: 0;
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .lesson-nav button:last-child {
+    justify-self: stretch;
+  }
+
   .toolbar,
   .section-heading {
     align-items: stretch;
@@ -653,8 +744,12 @@ select:focus-visible,
   }
 
   .unit-grid,
-  .choices,
+  .choices {
+    grid-template-columns: 1fr;
+  }
+
   .practice-form {
+    display: grid;
     grid-template-columns: 1fr;
   }
 
@@ -667,7 +762,8 @@ select:focus-visible,
   }
 
   .flashcard {
-    height: 390px;
+    height: min(390px, 62vh);
+    min-height: 310px;
   }
 
   .face {
@@ -676,6 +772,14 @@ select:focus-visible,
 
   .face h2 {
     max-width: 100%;
-    font-size: 38px;
+    font-size: clamp(30px, 9vw, 38px);
+  }
+
+  .practice-panel {
+    padding: 16px;
+  }
+
+  .practice-form button {
+    min-height: 44px;
   }
 }

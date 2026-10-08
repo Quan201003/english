@@ -7,13 +7,11 @@ const state = {
 const STAR_KEY = 'tutu-static-stars';
 const LAST_LESSON_KEY = 'tutu-static-last-lesson';
 const LESSON_PROGRESS_KEY = 'tutu-static-lesson-progress';
-const GUEST_ID = 'guest';
-let currentUser = null;
+const BROWSER_PROFILE_ID = 'browser';
+const currentUser = { uid: BROWSER_PROFILE_ID };
 let stars = new Set();
 let lastLessonId = '';
 let lessonProgress = {};
-let cloudDb = null;
-let cloudSaveTimer = null;
 const $ = (selector) => document.querySelector(selector);
 const audioPlayer = new Audio();
 audioPlayer.preload = 'none';
@@ -43,84 +41,27 @@ const plusMeaning = (value, english) => english.toLowerCase() === 'mean'
   : value.replaceAll('t rả', 'trả').replaceAll('kẻo bạo ngược', 'kẻ bạo ngược')
     .replaceAll('chân biếm', 'châm biếm').replace(/\s*[,/]\s*/g, '; ')
     .replace(/\s*;\s*/g, '; ').trim();
-const storageKey = (key) => `${key}:${currentUser?.uid || GUEST_ID}`;
+const storageKey = (key) => `${key}:${currentUser.uid}`;
 const loadLocalProgress = () => {
-  if (!currentUser) { stars = new Set(); lastLessonId = ''; lessonProgress = {}; return; }
   try { stars = new Set(JSON.parse(localStorage.getItem(storageKey(STAR_KEY)) || '[]').map(String)); } catch { stars = new Set(); }
   try { lessonProgress = JSON.parse(localStorage.getItem(storageKey(LESSON_PROGRESS_KEY)) || '{}') || {}; } catch { lessonProgress = {}; }
   lastLessonId = localStorage.getItem(storageKey(LAST_LESSON_KEY)) || '';
 };
 const saveProgress = () => {
-  if (!currentUser) return false;
   const progress = { stars: [...stars], lastLessonId };
   progress.lessonProgress = lessonProgress;
   localStorage.setItem(storageKey(STAR_KEY), JSON.stringify(progress.stars));
   localStorage.setItem(storageKey(LAST_LESSON_KEY), lastLessonId);
   localStorage.setItem(storageKey(LESSON_PROGRESS_KEY), JSON.stringify(lessonProgress));
-  if (cloudDb && currentUser) {
-    clearTimeout(cloudSaveTimer);
-    cloudSaveTimer = setTimeout(() => cloudDb.collection('users').doc(currentUser.uid).set({ ...progress, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(() => showMessage('Không thể đồng bộ tiến độ.')), 250);
-  }
 };
 const saveStars = saveProgress;
 const saveLastLesson = (id) => { lastLessonId = id; saveProgress(); };
 const sourceId = (word) => word.lessonId || state.unit?.id || '';
 
-async function loadUserProgress(user) {
-  currentUser = user || null;
+function loadBrowserProgress() {
   loadLocalProgress();
-  if (cloudDb && user) {
-    try {
-      const snapshot = await cloudDb.collection('users').doc(user.uid).get();
-      if (snapshot.exists) {
-        const progress = snapshot.data();
-        stars = new Set((progress.stars || []).map(String));
-        lastLessonId = progress.lastLessonId || '';
-        lessonProgress = progress.lessonProgress || {};
-        localStorage.setItem(storageKey(STAR_KEY), JSON.stringify([...stars]));
-        localStorage.setItem(storageKey(LAST_LESSON_KEY), lastLessonId);
-        localStorage.setItem(storageKey(LESSON_PROGRESS_KEY), JSON.stringify(lessonProgress));
-      } else saveProgress();
-    } catch { showMessage('Không thể tải tiến độ từ tài khoản.'); }
-  }
-  $('#accountName').textContent = user?.displayName || user?.email || '';
-  $('#googleSignIn').classList.toggle('hidden', Boolean(user));
-  $('#googleSignOut').classList.toggle('hidden', !user);
+  $('#accountName').textContent = 'Tiến độ được lưu trên trình duyệt này';
   renderHome();
-}
-
-function setupAuth() {
-  if (!window.FIREBASE_CONFIG || !window.firebase?.initializeApp) {
-    $('#googleSignIn').addEventListener('click', () => showMessage('Hãy cấu hình Firebase để bật đăng nhập Google.'));
-    return;
-  }
-  try {
-    firebase.initializeApp(window.FIREBASE_CONFIG);
-    cloudDb = firebase.firestore();
-    const auth = firebase.auth();
-    auth.onAuthStateChanged(loadUserProgress);
-    $('#googleSignIn').addEventListener('click', () => {
-      if (!['http:', 'https:'].includes(window.location.protocol)) {
-        showMessage('Hãy mở web bằng http://localhost, không mở trực tiếp file HTML.');
-        return;
-      }
-      auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()).catch(showAuthError);
-    });
-    $('#googleSignOut').addEventListener('click', () => firebase.auth().signOut());
-  } catch { showMessage('Cấu hình đăng nhập Google chưa hợp lệ.'); }
-}
-
-function showAuthError(error) {
-  const messages = {
-    'auth/popup-closed-by-user': 'Bạn đã đóng cửa sổ đăng nhập.',
-    'auth/popup-blocked': 'Trình duyệt đã chặn popup.',
-    'auth/operation-not-supported-in-this-environment': 'Môi trường hiện tại không hỗ trợ popup/redirect. Hãy mở bằng Chrome/Edge qua HTTP server, không mở file HTML trực tiếp.',
-    'auth/unauthorized-domain': 'Domain hiện tại chưa được thêm vào Firebase Authorized domains.',
-    'auth/operation-not-allowed': 'Google Sign-In chưa được bật trong Firebase Authentication.',
-    'auth/invalid-api-key': 'Firebase API key không hợp lệ.'
-  };
-  showMessage(messages[error.code] || `Đăng nhập Google thất bại: ${error.code || 'lỗi không xác định'}.`);
-  console.error('Google sign-in failed:', error);
 }
 
 function filteredUnits() {
@@ -170,13 +111,11 @@ function openUnit(id) {
   state.words = prepareWords([state.unit]);
   state.index = Math.min(Number(lessonProgress[state.unit.id] || 0), state.words.length - 1);
   state.flipped = false; state.starredOnly = false; state.mode = 'learn';
-  if (currentUser) saveLastLesson(state.unit.id);
-  else showMessage('Hãy đăng nhập Google để lưu lịch sử và tiến độ học.');
+  saveLastLesson(state.unit.id);
   showStudy(`${state.collection === 'plus' ? 'ANKI PLUS' : 'ANKI'} · ĐANG HỌC`, state.unit.title);
 }
 
 function openStarred() {
-  if (!currentUser) { showMessage('Hãy đăng nhập Google để xem và lưu lịch sử học.'); return; }
   const words = prepareWords(state.data.filter((unit) => unit.number > 12)).filter((word) => stars.has(word.id));
   if (!words.length) { showMessage('Bạn chưa đánh dấu từ nào.'); return; }
   state.unit = { title: 'Từ đã đánh dấu', id: 'starred' };
@@ -184,9 +123,32 @@ function openStarred() {
   showStudy(`${state.collection === 'plus' ? 'ANKI PLUS' : 'ANKI'} · ÔN TẬP`, 'Từ đã đánh dấu');
 }
 
+function updateLessonNavigation() {
+  const navigation = $('#lessonNav');
+  const isRegularLesson = state.unit && state.unit.id !== 'starred';
+  navigation.classList.toggle('hidden', !isRegularLesson);
+  if (!isRegularLesson) return;
+
+  const units = filteredUnits();
+  const currentIndex = units.findIndex((unit) => unit.id === state.unit.id);
+  const hasPrevious = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < units.length - 1;
+  $('#prevLesson').disabled = !hasPrevious;
+  $('#nextLesson').disabled = !hasNext;
+  $('#lessonPosition').textContent = currentIndex >= 0 ? `Bài ${currentIndex + 1} / ${units.length}` : '';
+}
+
+function navigateLesson(delta) {
+  const units = filteredUnits();
+  const currentIndex = units.findIndex((unit) => unit.id === state.unit?.id);
+  if (currentIndex < 0) return;
+  const nextUnit = units[currentIndex + delta];
+  if (nextUnit) openUnit(nextUnit.id);
+}
+
 function showStudy(label, title) {
   $('#homeView').classList.add('hidden'); $('#studyView').classList.remove('hidden');
-  $('#studyLabel').textContent = label; $('#studyTitle').textContent = title; renderCard();
+  $('#studyLabel').textContent = label; $('#studyTitle').textContent = title; updateLessonNavigation(); renderCard();
 }
 
 function activeWords() { return state.starredOnly ? state.words.filter((word) => stars.has(word.id)) : state.words; }
@@ -211,11 +173,10 @@ function renderCard() {
 function move(delta) {
   const words = activeWords(); if (!words.length) return;
   state.index = (state.index + delta + words.length) % words.length; state.flipped = false;
-  if (currentUser && state.unit?.id !== 'starred') { lessonProgress[state.unit.id] = state.index; saveProgress(); }
+  if (state.unit?.id !== 'starred') { lessonProgress[state.unit.id] = state.index; saveProgress(); }
   renderCard();
 }
 function toggleStar(id) {
-  if (!currentUser) { showMessage('Hãy đăng nhập Google để lưu từ đã đánh dấu.'); return; }
   stars.has(id) ? stars.delete(id) : stars.add(id); saveStars(); renderCard();
 }
 function renderAudioButton(word) {
@@ -251,6 +212,8 @@ document.addEventListener('click', (event) => {
   target = event.target.closest('[data-book]'); if (target) { state.book = target.dataset.book; renderFilters(); renderHome(); return; }
   target = event.target.closest('[data-unit]'); if (target) { openUnit(target.dataset.unit); return; }
   if (event.target.closest('#back')) { $('#studyView').classList.add('hidden'); $('#homeView').classList.remove('hidden'); return; }
+  if (event.target.closest('#prevLesson')) { navigateLesson(-1); return; }
+  if (event.target.closest('#nextLesson')) { navigateLesson(1); return; }
   if (event.target.closest('#card') && !event.target.closest('[data-star],[data-audio]')) {
     state.flipped = !state.flipped;
     $('#card').classList.toggle('flipped', state.flipped);
@@ -281,8 +244,7 @@ document.addEventListener('keydown', (event) => { if ($('#studyView').classList.
 function showMessage(text) { const message = $('#message'); message.textContent = text; message.classList.remove('hidden'); setTimeout(() => message.classList.add('hidden'), 2200); }
 Promise.resolve(window.VOCABULARY_DATA).then((data) => {
   state.data = data;
-  loadLocalProgress();
-  setupAuth();
+  loadBrowserProgress();
   renderFilters();
   renderHome();
 }).catch(() => { $('#unitGrid').innerHTML = '<p>Không tải được dữ liệu từ vựng.</p>'; });
