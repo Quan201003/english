@@ -731,11 +731,16 @@ select:focus-visible,
   }
 
   .card-area {
-    grid-template-columns: 1fr;
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    gap: 8px;
   }
 
   .arrow {
-    display: none;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
   }
 
   .flashcard {
