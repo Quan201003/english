@@ -159,6 +159,7 @@ function activeWords() { return state.starredOnly ? state.words.filter((word) =>
 function currentWord() { return activeWords()[state.index]; }
 
 function renderCard() {
+  $('#studyView').classList.toggle('practice-mode', state.mode === 'practice');
   const words = activeWords(); const word = currentWord();
   if (!word) {
     $('#front').innerHTML = '<h2>Chưa có từ được đánh dấu</h2><p class="hint">Tắt bộ lọc để xem toàn bộ unit.</p>';
