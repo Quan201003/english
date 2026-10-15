@@ -65,14 +65,14 @@ function loadBrowserProgress() {
 
 function filteredUnits() {
   const query = state.query.toLocaleLowerCase('vi');
-  return state.data.filter((item) => (state.collection === 'examples' ? item.words.some((word) => word.example && word.example.trim()) : item.number > 12)
+  return state.data.filter((item) => item.number > 12
     && (state.book === 'all' || Math.floor((item.number - 13) / 30) + 1 === Number(state.book))
     && `${item.title} ${item.subtitle || ''} unit ${item.number} ${item.words.map((word) => `${word.english} ${word.vietnamese}`).join(' ')}`
       .toLocaleLowerCase('vi').includes(query));
 }
 
 function renderFilters() {
-  const books = state.collection === 'examples' ? ['all'] : ['all', 1, 2, 3, 4, 5, 6];
+  const books = ['all', 1, 2, 3, 4, 5, 6];
   $('#filters').innerHTML = books.map((book) =>
     `<button class="${state.book === String(book) ? 'active' : ''}" data-book="${book}">${book === 'all' ? 'Tất cả' : `Sách ${book}`}</button>`).join('');
 }
@@ -81,31 +81,31 @@ function renderHome() {
   const plus = state.collection === 'plus';
   const examples = state.collection === 'examples';
   $('#eyebrow').textContent = examples ? 'ANKI · EXAMPLES' : (plus ? 'ANKI PLUS · TOEIC' : 'ANKI · FLASHCARD');
-  $('#title').textContent = examples ? 'Học ví dụ theo từng bài.' : (plus ? 'Học nghĩa sát ngữ cảnh.' : 'Học theo từng unit.');
+  $('#title').textContent = examples ? 'Học theo từng bài sách.' : (plus ? 'Học nghĩa sát ngữ cảnh.' : 'Học theo từng unit.');
   $('#description').textContent = plus
     ? 'Giữ nguyên bộ thẻ Anki, ưu tiên nghĩa tiếng Việt phù hợp với ngữ cảnh TOEIC.'
-    : (examples ? 'Ôn câu ví dụ Anh – Việt bằng flashcard lật thẻ.' : 'Ôn 6 bộ sách Anki theo đúng thứ tự và nghe phát âm ngay trên trình duyệt.');
+    : (examples ? 'Ôn từ vựng Anh – Việt theo đúng từng bài của 6 bộ sách Anki.' : 'Ôn 6 bộ sách Anki theo đúng thứ tự và nghe phát âm ngay trên trình duyệt.');
   const units = filteredUnits();
-  $('#unitTitle').textContent = examples ? 'Anki · Danh sách bài ví dụ' : (plus ? 'Anki Plus · Danh sách unit' : 'Anki · Danh sách unit');
+  $('#unitTitle').textContent = examples ? 'Anki · Danh sách bài' : (plus ? 'Anki Plus · Danh sách unit' : 'Anki · Danh sách unit');
   $('#unitCount').textContent = `${units.length} unit · ${stars.size} từ đã đánh dấu`;
   $('#unitGrid').innerHTML = units.map((item) => {
     const book = Math.floor((item.number - 13) / 30) + 1;
     const unit = (item.number - 13) % 30 + 1;
     const isCurrentLesson = item.id === lastLessonId;
-    const cards = examples ? item.words.filter((word) => word.example && word.example.trim()).length : item.words.length;
-    const lessonLabel = examples ? `BÀI ${item.number}` : `SÁCH ${book} · UNIT ${unit}`;
-    return `<article class="unit ${isCurrentLesson ? 'current-unit-card' : ''}"><div class="unit-meta"><span class="unit-label">${lessonLabel}</span>${isCurrentLesson ? '<span class="current-unit">ĐANG HỌC</span>' : ''}</div><h3>${escapeHtml(item.title)}</h3><p>${cards} ${examples ? 'ví dụ' : 'từ'} · ${plus ? 'nghĩa TOEIC' : 'flashcard'}</p><button data-unit="${escapeHtml(item.id)}">${isCurrentLesson ? 'Tiếp tục học →' : 'Bắt đầu học →'}</button></article>`;
+    const cards = item.words.length;
+    const lessonLabel = examples ? `SÁCH ${book} · BÀI ${unit}` : `SÁCH ${book} · UNIT ${unit}`;
+    return `<article class="unit ${isCurrentLesson ? 'current-unit-card' : ''}"><div class="unit-meta"><span class="unit-label">${lessonLabel}</span>${isCurrentLesson ? '<span class="current-unit">ĐANG HỌC</span>' : ''}</div><h3>${escapeHtml(item.title)}</h3><p>${cards} từ · ${plus ? 'nghĩa TOEIC' : 'flashcard'}</p><button data-unit="${escapeHtml(item.id)}">${isCurrentLesson ? 'Tiếp tục học →' : 'Bắt đầu học →'}</button></article>`;
   }).join('') || '<p>Không tìm thấy unit phù hợp.</p>';
 }
 
 function prepareWords(units) {
-  return units.flatMap((unit) => unit.words.filter((word) => state.collection !== 'examples' || (word.example && word.example.trim())).map((word) => ({
+  return units.flatMap((unit) => unit.words.map((word) => ({
     ...word,
     id: `${unit.id}-${word.position}`,
     lessonId: unit.id,
     lessonTitle: unit.title,
-    english: state.collection === 'examples' ? word.example.split(/\s*\((?=[^()]*\)\s*$)/)[0].trim() : word.english,
-    vietnamese: state.collection === 'examples' ? ((word.example.match(/\(([^()]*)\)\s*$/) || [])[1] || word.vietnamese).trim() : (state.collection === 'plus' ? plusMeaning(word.vietnamese, word.english) : word.vietnamese),
+    english: word.english,
+    vietnamese: state.collection === 'plus' ? plusMeaning(word.vietnamese, word.english) : word.vietnamese,
     audioUrl: `audio/${unit.id}/${word.position}.mp3`
   })));
 }
@@ -184,8 +184,8 @@ function renderExampleCard(word) {
   const prompt = englishSide ? word.english : word.vietnamese;
   const answer = englishSide ? word.vietnamese : word.english;
   $('#card').classList.toggle('flipped', state.flipped);
-  $('#front').innerHTML = `<button class="star ${stars.has(word.id) ? 'saved' : ''}" data-star="${escapeHtml(word.id)}" type="button" aria-label="Đánh dấu ví dụ">★</button><p class="card-label">${englishSide ? 'CÂU VÍ DỤ' : 'BẢN DỊCH'}</p><h2>${escapeHtml(prompt)}</h2><p class="hint">Nhấn thẻ để xem bản dịch</p>`;
-  $('#backFace').innerHTML = `<p class="card-label">${englishSide ? 'BẢN DỊCH' : 'CÂU VÍ DỤ'}</p><h2>${escapeHtml(answer)}</h2><p class="hint">Nhấn thẻ để quay lại</p>`;
+  $('#front').innerHTML = `<button class="star ${stars.has(word.id) ? 'saved' : ''}" data-star="${escapeHtml(word.id)}" type="button" aria-label="Đánh dấu từ">★</button><p class="card-label">${englishSide ? 'TỪ VỰNG TRONG BÀI' : 'BẢN DỊCH'}</p><h2>${escapeHtml(prompt)}</h2><p class="hint">Nhấn thẻ để xem bản dịch</p>`;
+  $('#backFace').innerHTML = `<p class="card-label">${englishSide ? 'BẢN DỊCH' : 'TỪ VỰNG TRONG BÀI'}</p><h2>${escapeHtml(answer)}</h2>${word.example ? `<p class="example">${escapeHtml(word.example)}</p>` : ''}<p class="hint">Nhấn thẻ để quay lại</p>`;
   $('#counter').textContent = `${state.index + 1} / ${activeWords().length}`;
   $('#progress').style.width = `${(state.index + 1) / activeWords().length * 100}%`;
 }
